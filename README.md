@@ -1,2 +1,2 @@
 # snipeit-devops
-saya sedang belajar menggunakan git dan docker
+microk8s high availability system
