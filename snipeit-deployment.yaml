@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snipeit
+  namespace: snipeit
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: snipeit
+  template:
+    metadata:
+      labels:
+        app: snipeit
+    spec:
+      containers:
+        - name: snipeit
+          image: snipe/snipe-it:v8.3.7
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: snipeit-db-secrets
+                  key: db_host  # Mengambil DB_HOST dari Secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: snipeit-db-secrets
+                  key: db_username  # Mengambil DB_USERNAME dari Secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: snipeit-db-secrets
+                  key: db_password  # Mengambil DB_PASSWORD dari Secret
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: snipeit-db-secrets
+                  key: db_name  # Mengambil DB_NAME dari Secret
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: snipeit-db-secrets
+                  key: app_key  # Mengambil APP_KEY dari Secret
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: snipeit-volume
+              mountPath: /var/www/html
+      volumes:
+        - name: snipeit-volume
+          persistentVolumeClaim:
+            claimName: snipeit-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: snipeit-pvc
+  namespace: snipeit
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
