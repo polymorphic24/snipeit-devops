@@ -6,12 +6,7 @@ metadata:
   labels:
     app: snipeit
 spec:
-  replicas: 3  # Jumlah replica = jumlah node MicroK8s untuk HA
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0  # Pastikan tidak ada Pod yang tidak tersedia saat update
+  replicas: 3
   selector:
     matchLabels:
       app: snipeit
@@ -20,52 +15,36 @@ spec:
       labels:
         app: snipeit
     spec:
-      # Pastikan setiap Pod berjalan di node yang berbeda
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - snipeit
-            topologyKey: kubernetes.io/hostname
+      securityContext:
+        fsGroup: 1000  # Menyamakan grup agar akses NFS lancar
       containers:
       - name: snipeit
-        image: snipe/snipe-it:v8.3.7  # Gunakan versi yang sama dengan sistem lama
-        ports:
-        - containerPort: 80
+        image: snipe/snipe-it:v8.3.7
         env:
-        # --- Konfigurasi Database (mengarah ke Galera Anda) ---
-        - name: DB_CONNECTION
-          value: "mysql"
+        - name: TZ
+          value: "Asia/Jakarta"
+        - name: APP_URL
+          value: "http://plaset.it-ops.my.id"  # Ganti dengan IP Ingress nanti
         - name: DB_HOST
-          value: "192.168.10.155"  # IP Virtual HAProxy Galera
-        - name: DB_PORT
-          value: "3306"
+          value: "192.168.10.155"
         - name: DB_DATABASE
           value: "snipeit"
         - name: DB_USERNAME
           value: "snipeit"
         - name: DB_PASSWORD
-          value: "db_P0nd0kL3ns4"
-        # --- Konfigurasi Aplikasi (Copy dari .env lama) ---
+          valueFrom:
+            secretKeyRef:
+              name: snipeit-secret
+              key: db-password
         - name: APP_KEY
-          value: "base64:H9U7UYPIx9NJ14m3JCNgJ1rEbGxxNDxNDStbpG7de6c="  # Kunci enkripsi dari sistem lama
-        - name: APP_URL
-          value: "https://plaset.it-ops.my.id"
-        - name: APP_ENV
-          value: "production"
-        - name: APP_DEBUG
-          value: "false"
-        - name: APP_TIMEZONE
-          value: "Asia/Jakarta"  # Sesuaikan dengan zona waktu Anda
-        # --- Konfigurasi Storage ---
+          valueFrom:
+            secretKeyRef:
+              name: snipeit-secret
+              key: app-key
         volumeMounts:
-        - name: snipeit-storage
-          mountPath: /var/lib/snipeit
+        - name: snipeit-data
+          mountPath: /var/lib/snipeit  # Path yang benar untuk image linuxserver/snipe-it
       volumes:
-      - name: snipeit-storage
+      - name: snipeit-data
         persistentVolumeClaim:
-          claimName: snipeit-nfs-pvc
+          claimName: snipeit-pvc

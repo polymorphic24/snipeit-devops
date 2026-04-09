@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snipeit-ingress
+  namespace: snipeit
+  annotations:
+    kubernetes.io/ingress.class: "public"  # Untuk MicroK8s, gunakan "public"
+spec:
+  rules:
+  - host: plaset.it-ops.my.id  # Ganti dengan domain yang Anda inginkan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: snipeit-svc
+            port:
+              number: 80
