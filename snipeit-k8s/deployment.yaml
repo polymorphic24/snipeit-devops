@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snipeit
+  namespace: snipeit
+  labels:
+    app: snipeit
+spec:
+  replicas: 3  # Jumlah replica = jumlah node MicroK8s untuk HA
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Pastikan tidak ada Pod yang tidak tersedia saat update
+  selector:
+    matchLabels:
+      app: snipeit
+  template:
+    metadata:
+      labels:
+        app: snipeit
+    spec:
+      # Pastikan setiap Pod berjalan di node yang berbeda
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - snipeit
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: snipeit
+        image: snipe/snipe-it:v8.3.7  # Gunakan versi yang sama dengan sistem lama
+        ports:
+        - containerPort: 80
+        env:
+        # --- Konfigurasi Database (mengarah ke Galera Anda) ---
+        - name: DB_CONNECTION
+          value: "mysql"
+        - name: DB_HOST
+          value: "192.168.10.155"  # IP Virtual HAProxy Galera
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_DATABASE
+          value: "snipeit"
+        - name: DB_USERNAME
+          value: "snipeit"
+        - name: DB_PASSWORD
+          value: "db_P0nd0kL3ns4"
+        # --- Konfigurasi Aplikasi (Copy dari .env lama) ---
+        - name: APP_KEY
+          value: "base64:H9U7UYPIx9NJ14m3JCNgJ1rEbGxxNDxNDStbpG7de6c="  # Kunci enkripsi dari sistem lama
+        - name: APP_URL
+          value: "https://plaset.it-ops.my.id"
+        - name: APP_ENV
+          value: "production"
+        - name: APP_DEBUG
+          value: "false"
+        - name: APP_TIMEZONE
+          value: "Asia/Jakarta"  # Sesuaikan dengan zona waktu Anda
+        # --- Konfigurasi Storage ---
+        volumeMounts:
+        - name: snipeit-storage
+          mountPath: /var/lib/snipeit
+      volumes:
+      - name: snipeit-storage
+        persistentVolumeClaim:
+          claimName: snipeit-nfs-pvc

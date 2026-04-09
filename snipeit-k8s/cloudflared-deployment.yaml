@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: snipeit
+spec:
+  replicas: 2  # Multiple replicas untuk HA tunnel
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        args:
+        - tunnel
+        - --no-autoupdate
+        - run
+        env:
+        - name: TUNNEL_TOKEN
+          value: "[YOUR_CLOUDFLARE_TUNNEL_TOKEN]"
+        #  atau jika pakai credentials file:
+        # - name: TUNNEL_CRED_FILE
+        #   value: /etc/cloudflared/creds/credentials.json
+        # volumeMounts:
+        # - name: creds
+        #   mountPath: /etc/cloudflared/creds
+        #   readOnly: true
+      # volumes:
+      # - name: creds
+      #   secret:
+      #     secretName: cloudflare-tunnel-secret
