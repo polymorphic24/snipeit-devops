@@ -25,6 +25,8 @@ spec:
           value: "Asia/Jakarta"
         - name: SESSION_DRIVER
           value: redis
+        - name: CACHE_DRIVER
+          value: redis
         - name: REDIS_HOST
           value: redis
         - name: REDIS_PORT
