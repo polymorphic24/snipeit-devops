@@ -10,7 +10,6 @@ spec:
   storageClassName: nfs
   nfs:
     server: 192.168.10.60
-#    path: /export/redis
     path: /srv/nfs/snipeit
 ---
 apiVersion: v1
@@ -32,7 +31,7 @@ metadata:
   name: redis
   namespace: snipeit
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: redis
